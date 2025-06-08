@@ -85,9 +85,7 @@ class StockSummaryReport(ReportMixin, SettingsMixin, UserInterfaceMixin, InvenTr
         # Get all stock items in this location and its sub-locations
         location_tree = model_instance.get_descendants(include_self=True)
         stock_items = StockItem.objects.filter(
-            location__in=location_tree,
-            tracking_info__date__gte=start_date,
-            tracking_info__date__lte=end_date
+            location__in=location_tree
         ).select_related('part', 'location').distinct()
         
         # Process each stock item
