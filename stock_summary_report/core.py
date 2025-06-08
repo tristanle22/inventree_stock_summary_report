@@ -118,7 +118,7 @@ class StockSummaryReport(ReportMixin, SettingsMixin, UserInterfaceMixin, InvenTr
                     'start': start_date_str,
                     'end': end_date_str
                 },
-                'part': item.part.name,
+                'part': item.part,
                 'part_id': item.part.id,
                 'location': item.location.name,
                 'location_id': item.location.id,
