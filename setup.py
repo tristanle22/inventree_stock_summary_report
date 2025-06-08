@@ -28,7 +28,7 @@ setuptools.setup(
     description="Print stock flow between a date range",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url="https://my-project-url.com",
+    url="https://github.com/tristanle22/inventree_stock_summary_report",
     license="MIT",
     packages=setuptools.find_packages(),
     keywords="inventree plugin",

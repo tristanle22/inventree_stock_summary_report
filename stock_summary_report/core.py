@@ -9,6 +9,7 @@ from . import PLUGIN_VERSION
 from report.models import ReportTemplate
 from stock.models import StockLocation, StockItem
 
+from decimal import Decimal
 from datetime import datetime
 from django import template
 from django.template.defaultfilters import stringfilter
@@ -33,7 +34,7 @@ class StockSummaryReport(ReportMixin, SettingsMixin, UserInterfaceMixin, InvenTr
 
     # Additional project information
     AUTHOR = "Tristan Le"
-    WEBSITE = "https://my-project-url.com"
+    WEBSITE = "https://github.com/tristanle22/inventree_stock_summary_report"
     LICENSE = "MIT"
 
     # Optionally specify supported InvenTree versions
@@ -98,6 +99,8 @@ class StockSummaryReport(ReportMixin, SettingsMixin, UserInterfaceMixin, InvenTr
                 date__lte=end_date
             ).order_by('date')
             
+            sum_added = 0
+            sum_removed = 0
             if tracking_entries.exists():
                 # Calculate sum of added deltas
                 sum_added = sum(
@@ -112,28 +115,29 @@ class StockSummaryReport(ReportMixin, SettingsMixin, UserInterfaceMixin, InvenTr
                     if hasattr(entry, 'deltas')
                 )
                 
-                stock_summary.append({
-                    'date_range': {
-                        'start': start_date_str,
-                        'end': end_date_str
-                    },
-                    'part': item.part.name,
-                    'part_id': item.part.id,
-                    'location': item.location.name,
-                    'location_id': item.location.id,
-                    'quantity': item.quantity,
-                    'sum_added': sum_added,
-                    'sum_removed': sum_removed,
-                    'tracking_entries': [
-                        {
-                            'date': entry.date,
-                            'deltas': entry.deltas,
-                            'notes': entry.notes,
-                        } for entry in tracking_entries
-                    ],
-                    'first_entry': tracking_entries.first(),
-                    'last_entry': tracking_entries.last(),
-                })
+            stock_summary.append({
+                'date_range': {
+                    'start': start_date_str,
+                    'end': end_date_str
+                },
+                'part': item.part.name,
+                'part_id': item.part.id,
+                'location': item.location.name,
+                'location_id': item.location.id,
+                'quantity': item.quantity,
+                'start_quantity': item.quantity - Decimal(str(sum_added)) + Decimal(str(sum_removed)),
+                'sum_added': sum_added,
+                'sum_removed': sum_removed,
+                'tracking_entries': [
+                    {
+                        'date': entry.date,
+                        'deltas': entry.deltas,
+                        'notes': entry.notes,
+                    } for entry in tracking_entries
+                ],
+                'first_entry': tracking_entries.first(),
+                'last_entry': tracking_entries.last(),
+            })
         
         # Add the summary to the report context
         context['stock_summary'] = stock_summary
