@@ -13,6 +13,7 @@ from decimal import Decimal
 from datetime import datetime
 from django import template
 from django.template.defaultfilters import stringfilter
+from django.utils import timezone
 
 register = template.Library()
 
@@ -50,15 +51,15 @@ class StockSummaryReport(ReportMixin, SettingsMixin, UserInterfaceMixin, InvenTr
     SETTINGS = {
         'START_DATE': {
             'name': 'Start Date',
-            'description': 'Start date for stock tracking (YYYY-MM-DD)',
+            'description': 'Start date for stock tracking (DD/MM/YYYY)',
             'validator': str,
-            'default': '2024-01-01',
+            'default': '01/01/2024',
         },
         'END_DATE': {
             'name': 'End Date',
-            'description': 'End date for stock tracking (YYYY-MM-DD)',
+            'description': 'End date for stock tracking (DD/MM/YYYY)',
             'validator': str,
-            'default': '2024-12-31',
+            'default': '31/12/2024',
         }
     }
     
@@ -112,20 +113,23 @@ class StockSummaryReport(ReportMixin, SettingsMixin, UserInterfaceMixin, InvenTr
                     for entry in tracking_entries 
                     if hasattr(entry, 'deltas')
                 )
-                
+            
+            start_quantity = item.quantity - Decimal(str(sum_added)) + Decimal(str(sum_removed))
+            purchase_price = item.purchase_price if item.purchase_price else 0
             stock_summary.append({
-                'date_range': {
-                    'start': start_date_str,
-                    'end': end_date_str
-                },
+                'stock_item': item,
                 'part': item.part,
                 'part_id': item.part.id,
                 'location': item.location.name,
                 'location_id': item.location.id,
                 'quantity': item.quantity,
-                'start_quantity': item.quantity - Decimal(str(sum_added)) + Decimal(str(sum_removed)),
+                'quantity_value': item.quantity * purchase_price,
+                'start_quantity': start_quantity,
+                'start_quantity_value': start_quantity * purchase_price,
                 'sum_added': sum_added,
+                'sum_added_value': sum_added * purchase_price,
                 'sum_removed': sum_removed,
+                'sum_removed_value': sum_removed * purchase_price,
                 'tracking_entries': [
                     {
                         'date': entry.date,
@@ -209,8 +213,12 @@ class StockSummaryReport(ReportMixin, SettingsMixin, UserInterfaceMixin, InvenTr
         """Get the date range from plugin settings."""
         settings = self.get_settings_dict()
         
-        # Parse the date strings into datetime objects
-        start_date = datetime.strptime(settings.get('START_DATE', '2024-01-01'), '%Y-%m-%d')
-        end_date = datetime.strptime(settings.get('END_DATE', '2024-12-31'), '%Y-%m-%d')
+        # Parse the date strings into timezone-aware datetime objects
+        start_date = timezone.make_aware(
+            datetime.strptime(settings.get('START_DATE', '01/01/2024'), '%d/%m/%Y')
+        )
+        end_date = timezone.make_aware(
+            datetime.strptime(settings.get('END_DATE', '31/12/2024'), '%d/%m/%Y')
+        )
         
-        return start_date, end_date, settings.get('START_DATE', '2024-01-01'), settings.get('END_DATE', '2024-12-31')
+        return start_date, end_date, settings.get('START_DATE', '01/01/2024'), settings.get('END_DATE', '31/12/2024')
