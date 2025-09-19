@@ -46,4 +46,10 @@ setuptools.setup(
             "StockSummaryReport = stock_summary_report.core:StockSummaryReport"
         ]
     },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+        "Framework :: InvenTree",
+    ],
 )
+
